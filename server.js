@@ -1,6 +1,5 @@
-// server.js
 import express from 'express';
-import fetch from 'node-fetch'; // Ensure you have node-fetch installed
+import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -9,7 +8,6 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
 
-// PesaPal credentials
 const CONSUMER_KEY = process.env.PESAPAL_CONSUMER_KEY;
 const CONSUMER_SECRET = process.env.PESAPAL_CONSUMER_SECRET;
 
@@ -25,32 +23,29 @@ app.get('/create-payment', async (req, res) => {
   }
 
   try {
-    // Prepare payment data
+    // Payment data for PesaPal
     const paymentData = {
       amount,
       description: `${platform} ${service} (${units} units)`,
-      callback_url: CALLBACK_URL,
-      // Add more fields as needed
+      callback_url: CALLBACK_URL
     };
 
-    // Send request to PesaPal API
+    // Send request to PesaPal (sandbox or live)
     const response = await fetch('https://pay.pesapal.com/v3/api/Transactions/SubmitOrderRequest', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${CONSUMER_KEY}:${CONSUMER_SECRET}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify(paymentData),
+      body: JSON.stringify(paymentData)
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to create payment');
-    }
+    if (!response.ok) throw new Error('Failed to create payment');
 
     const data = await response.json();
-    const checkoutUrl = data.checkout_url; // Assuming the API returns this field
 
-    // Redirect user to PesaPal checkout
+    // Redirect user to PesaPal checkout URL
+    const checkoutUrl = data.checkout_url;
     res.redirect(checkoutUrl);
   } catch (err) {
     console.error(err);
