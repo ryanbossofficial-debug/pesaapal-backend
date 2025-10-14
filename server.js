@@ -1,65 +1,63 @@
-// server.js (ESM)
+// server.js
 import express from 'express';
-import cors from 'cors';
-import crypto from 'crypto';
-import bodyParser from 'body-parser';
+import fetch from 'node-fetch'; // Ensure you have node-fetch installed
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
-app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
-// PesaPal credentials (set these in Render environment variables)
-const PESAPAL_CONSUMER_KEY = process.env.PESAPAL_CONSUMER_KEY;
-const PESAPAL_CONSUMER_SECRET = process.env.PESAPAL_CONSUMER_SECRET;
+// PesaPal credentials
+const CONSUMER_KEY = process.env.PESAPAL_CONSUMER_KEY;
+const CONSUMER_SECRET = process.env.PESAPAL_CONSUMER_SECRET;
 
-// Sandbox/live URL
-const PESAPAL_URL = 'https://demo.pesapal.com/api/PostPesapalDirectOrderV4'; // Change to live URL when ready
-const CALLBACK_URL = 'https://pesaapal-backend.onrender.com/payment-callback';
+// Your thank-you page
+const CALLBACK_URL = 'https://echofemme1thankyou.edgeone.app/';
 
-// Health check
-app.get('/', (req, res) => res.send('PesaPal backend running ✅'));
-
-// Create payment endpoint
+// Endpoint to create payment
 app.get('/create-payment', async (req, res) => {
   const { platform, service, amount, units } = req.query;
 
   if (!platform || !service || !amount || !units) {
-    return res.status(400).json({ error: 'Missing query parameters' });
+    return res.status(400).json({ error: 'Missing parameters' });
   }
 
   try {
-    // Generate unique order reference
-    const reference = crypto.randomBytes(6).toString('hex');
-
-    // Build PesaPal payload
-    const payload = {
+    // Prepare payment data
+    const paymentData = {
       amount,
-      currency: 'KES',
-      description: `${platform} ${service} x${units}`,
-      type: 'MERCHANT',
-      reference,
+      description: `${platform} ${service} (${units} units)`,
       callback_url: CALLBACK_URL,
+      // Add more fields as needed
     };
 
-    // Build URL params
-    const params = new URLSearchParams(payload).toString();
-    const paymentUrl = `${PESAPAL_URL}?${params}`;
+    // Send request to PesaPal API
+    const response = await fetch('https://pay.pesapal.com/v3/api/Transactions/SubmitOrderRequest', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${CONSUMER_KEY}:${CONSUMER_SECRET}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(paymentData),
+    });
 
-    // Return payment URL
-    res.json({ paymentUrl });
+    if (!response.ok) {
+      throw new Error('Failed to create payment');
+    }
 
+    const data = await response.json();
+    const checkoutUrl = data.checkout_url; // Assuming the API returns this field
+
+    // Redirect user to PesaPal checkout
+    res.redirect(checkoutUrl);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to create payment' });
   }
 });
 
-// Payment callback endpoint
-app.post('/payment-callback', (req, res) => {
-  console.log('Payment callback received:', req.body);
-  res.status(200).send('OK');
+app.listen(PORT, () => {
+  console.log(`Pesapal backend running on port ${PORT} ✅`);
 });
-
-app.listen(PORT, () => console.log(`PesaPal backend running on port ${PORT} ✅`));
