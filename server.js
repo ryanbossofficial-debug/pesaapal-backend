@@ -2,7 +2,6 @@
 import express from 'express';
 import cors from 'cors';
 import crypto from 'crypto';
-import fetch from 'node-fetch'; // Needed for API calls
 import bodyParser from 'body-parser';
 
 const app = express();
@@ -44,8 +43,7 @@ app.get('/create-payment', async (req, res) => {
       callback_url: CALLBACK_URL,
     };
 
-    // Generate OAuth signature (basic example, PesaPal uses OAuth1)
-    // For demo we just append params in URL
+    // Build URL params
     const params = new URLSearchParams(payload).toString();
     const paymentUrl = `${PESAPAL_URL}?${params}`;
 
@@ -58,7 +56,7 @@ app.get('/create-payment', async (req, res) => {
   }
 });
 
-// Payment callback endpoint (you can handle payment confirmation here)
+// Payment callback endpoint
 app.post('/payment-callback', (req, res) => {
   console.log('Payment callback received:', req.body);
   res.status(200).send('OK');
