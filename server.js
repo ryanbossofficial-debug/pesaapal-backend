@@ -19,8 +19,8 @@ app.post("/api/initiate-payment", async (req, res) => {
     const tokenResponse = await axios.post(
       "https://pay.pesapal.com/v3/api/Auth/RequestToken",
       {
-        consumer_key:w31yHMdysEMFwlaZBnK2QSr2u+Nqhum process.env.PESAPAL_CONSUMER_KEY,
-        consumer_secret:Vb5KCp4/gnxuT1JMhLpTRkRg/Gw=   process.env.PESAPAL_CONSUMER_SECRET,
+        consumer_key: process.env.PESAPAL_CONSUMER_KEY,
+        consumer_secret: process.env.PESAPAL_CONSUMER_SECRET,
       }
     );
 
