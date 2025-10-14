@@ -1,39 +1,26 @@
 import express from "express";
-import dotenv from "dotenv";
-import cors from "cors";
-import bodyParser from "body-parser";
-import pesaRoutes from "./controllers/pesapalController.js";
-
-dotenv.config();
-
-const app = express();
-app.use(cors());
-app.use(bodyParser.json());
-
-app.use("/api/pesapal", pesaRoutes);
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
-import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
 
 dotenv.config();
+
 const app = express();
 app.use(express.json());
 
+// Simple test route
 app.get("/", (req, res) => {
   res.send("✅ PesaPal Backend is running!");
 });
 
+// Initiate payment route
 app.post("/api/initiate-payment", async (req, res) => {
   try {
-    // Step 1: Get OAuth Token
+    // Step 1: Get OAuth token
     const tokenResponse = await axios.post(
       "https://pay.pesapal.com/v3/api/Auth/RequestToken",
       {
-        consumer_key: process.env.PESAPAL_CONSUMER_KEY,
-        consumer_secret: process.env.PESAPAL_CONSUMER_SECRET,
+        consumer_key:w31yHMdysEMFwlaZBnK2QSr2u+Nqhum process.env.PESAPAL_CONSUMER_KEY,
+        consumer_secret:Vb5KCp4/gnxuT1JMhLpTRkRg/Gw=   process.env.PESAPAL_CONSUMER_SECRET,
       }
     );
 
