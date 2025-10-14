@@ -1,62 +1,59 @@
-import express from "express";
-import axios from "axios";
-import dotenv from "dotenv";
-
-dotenv.config();
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
 
 const app = express();
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
 
-// Simple test route
-app.get("/", (req, res) => {
-  res.send("✅ PesaPal Backend is running!");
+app.use(cors());
+app.use(bodyParser.json());
+
+const CONSUMER_KEY = process.env.PESAPAL_CONSUMER_KEY;
+const CONSUMER_SECRET = process.env.PESAPAL_CONSUMER_SECRET;
+const CALLBACK_URL = process.env.CALLBACK_URL; // https://echofemme1thankyou.edgeone.app/
+
+// Root route to check if server is running
+app.get('/', (req, res) => {
+  res.send('Backend is running ✅');
 });
 
-// Initiate payment route
-app.post("/api/initiate-payment", async (req, res) => {
+// Create Payment endpoint
+app.get('/create-payment', (req, res) => {
+  const { platform, service, amount, units } = req.query;
+
+  if (!platform || !service || !amount) {
+    return res.status(400).send('Missing payment data');
+  }
+
   try {
-    // Step 1: Get OAuth token
-    const tokenResponse = await axios.post(
-      "https://pay.pesapal.com/v3/api/Auth/RequestToken",
-      {
-        consumer_key: process.env.PESAPAL_CONSUMER_KEY,
-        consumer_secret: process.env.PESAPAL_CONSUMER_SECRET,
-      }
-    );
+    // 1️⃣ Generate a unique reference for this order
+    const reference = `order_${Date.now()}`;
 
-    const token = tokenResponse.data.token;
-
-    // Step 2: Create payment order
-    const orderData = {
-      id: Date.now().toString(),
-      amount: req.body.amount,
-      description: "Payment for product",
-      callback_url: "https://yourfrontend.com/thankyou",
-      notification_id: "your-notification-id",
-      billing_address: {
-        email_address: req.body.email,
-        phone_number: req.body.phone,
-        first_name: req.body.first_name,
-        last_name: req.body.last_name,
-      },
+    // 2️⃣ Build a payload (for future PesaPal integration)
+    const paymentData = {
+      amount: amount,
+      currency: 'KES',
+      description: `${platform} ${service}`,
+      type: 'MERCHANT',
+      reference: reference,
+      first_name: 'Customer',
+      last_name: 'Name',
+      email: 'customer@example.com',
+      phone_number: '254700000000',
+      callback_url: CALLBACK_URL
     };
 
-    const orderResponse = await axios.post(
-      "https://pay.pesapal.com/v3/api/Transactions/SubmitOrderRequest",
-      orderData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    console.log('Payment requested:', paymentData);
 
-    res.json(orderResponse.data);
+    // 3️⃣ For now: redirect user to thank-you page
+    res.redirect(CALLBACK_URL);
+
   } catch (err) {
-    console.error(err.response?.data || err.message);
-    res.status(500).json({ error: "Payment initiation failed" });
+    console.error('Error creating payment:', err);
+    res.status(500).send('Error creating payment');
   }
 });
 
-const port = process.env.PORT || 10000;
-app.listen(port, () => console.log(`✅ Server running on port ${port}`));
+// Start server
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));
